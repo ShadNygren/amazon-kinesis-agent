@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.lang.Thread;
+import java.lang.Math;
 
 import lombok.Getter;
 
@@ -103,14 +105,21 @@ public abstract class AbstractParser<R extends IRecord> implements IParser<R> {
     @Override
     public synchronized boolean startParsingFile(TrackedFile file) {
         if (setCurrentFile(file, true)) {
-            try {
-                goToInitialPosition();
-                return true;
-            } catch(IOException e) {
-                logger.error("{}: Failed setting the initial position on file {}", name, file, e);
-                stopParsing("Unhandled error.");
-                totalUndhandledErrors.incrementAndGet();
-                return false;
+            int retryCount = 0;
+            int maxRetries = 5;
+            while(true) {
+                try {
+                    goToInitialPosition();
+                    return true;
+                } catch(IOException e) {
+                    logger.error("{}: Failed setting the initial position on file {}", name, file, e);
+                    if (++retryCount == maxRetries) {
+                        stopParsing("Unhandled error.");
+                        totalUndhandledErrors.incrementAndGet();
+                        return false;
+                    }
+                    sleep((1000.0 * pow(1.7, retryCount.doubleValue())).longValue());
+                }
             }
         }
         return false;
