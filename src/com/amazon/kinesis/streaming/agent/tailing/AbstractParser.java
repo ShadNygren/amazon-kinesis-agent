@@ -118,7 +118,7 @@ public abstract class AbstractParser<R extends IRecord> implements IParser<R> {
                         totalUndhandledErrors.incrementAndGet();
                         return false;
                     }
-                    sleep((1000.0 * pow(1.7, retryCount.doubleValue())).longValue());
+                    sleep((1000.0 * pow(1.7, retryCount)).longValue());
                 }
             }
         }
